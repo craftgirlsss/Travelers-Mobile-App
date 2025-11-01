@@ -1,12 +1,29 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:travelers/modules/auth/controllers/login_controller.dart';
+import 'package:travelers/services/notification_service.dart';
 import 'data/providers/api_provider.dart';
 import 'data/services/permission_service.dart';
+import 'firebase_options.dart';
 import 'presentation/themes/app_theme.dart';
 import 'presentation/themes/theme_controller.dart';
 import 'config/routes/app_pages.dart';
 import 'config/translations/app_translations.dart';
+
+// 💥 Handler untuk pesan latar belakang (harus top-level function)
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // await Firebase.initializeApp();
+  print("Handling a background message: ${message.messageId}");
+
+  // Catatan: Payload data harus dikirim dari server untuk notifikasi yang kustom
+  LocalNotificationService.displayNotification(
+    title: message.notification?.title ?? "Pesan Baru",
+    body: message.notification?.body ?? "Cek aplikasi Anda.",
+  );
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,6 +31,8 @@ void main() async {
   Get.put(ThemeController());
   Get.put(ApiService());
   Get.put(PermissionService());
+  Get.put(LoginController());
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
 }
 

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 class AppTheme {
   // Warna Utama Aplikasi
-  static const Color primaryColor = Color(0xFF007AFF); // Biru khas traveling
+  // static const Color primaryColor = Color(0xFF007AFF); // Biru khas traveling
+  static const Color primaryColor = Color(0xFF000000);
 
   // --- Tema Terang (Light Theme) ---
   static final ThemeData lightTheme = ThemeData(

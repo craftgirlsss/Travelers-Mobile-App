@@ -116,7 +116,7 @@ class RegisterController extends GetxController {
 
       final responseData = jsonDecode(response.body);
 
-      if (response.statusCode == 200 && responseData['status'] == 'success') {
+      if (response.statusCode == 201 && responseData['status'] == true) {
         // Registrasi Berhasil
         Get.snackbar(
             'Registrasi Berhasil',

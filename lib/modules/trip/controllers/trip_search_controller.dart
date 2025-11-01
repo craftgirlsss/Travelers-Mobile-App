@@ -66,6 +66,8 @@ class TripSearchController extends GetxController with GetSingleTickerProviderSt
         results = await _tripRepository.searchTripsByGatheringPoint(trimmedQuery);
       }
 
+      print(results);
+
       searchResults.assignAll(results);
 
     } catch (e) {

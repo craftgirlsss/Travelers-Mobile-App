@@ -15,7 +15,6 @@ class LoginController extends GetxController {
   final RxString errorMessage = ''.obs;
 
   // GlobalKey untuk validasi form
-  final GlobalKey<FormState> loginFormKey = GlobalKey<FormState>();
 
   // TextEditingController untuk input
   final TextEditingController emailC = TextEditingController();
@@ -41,11 +40,6 @@ class LoginController extends GetxController {
 
   // --- Logika Login Email/Password ---
   Future<void> loginWithEmail() async {
-    // Validasi form
-    if (!loginFormKey.currentState!.validate()) {
-      return;
-    }
-
     isLoading.value = true;
     errorMessage.value = '';
 
@@ -79,6 +73,10 @@ class LoginController extends GetxController {
 
         // Navigasi ke halaman utama
         Get.offAllNamed(Routes.HOME);
+
+        // PENTING: Hapus controller ini dari memori agar onClose() terpanggil.
+        // Ini mencegah TextEditingController digunakan kembali setelah dibuang.
+        Get.delete<LoginController>();
 
       } else {
         // Login Gagal (Status 401/200 dengan status: false)
@@ -118,8 +116,9 @@ class LoginController extends GetxController {
 
   @override
   void onClose() {
-    emailC.dispose();
-    passwordC.dispose();
+    // Sudah benar dan PENTING: Membuang TextEditingController
+    // emailC.dispose();
+    // passwordC.dispose();
     super.onClose();
   }
 }

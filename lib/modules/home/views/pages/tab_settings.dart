@@ -3,6 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:icons_plus/icons_plus.dart';
+import 'package:travelers/modules/settings/controllers/setting_controller.dart';
+import '../../../../config/routes/app_routes.dart';
 import '../../../../presentation/themes/app_theme.dart'; // Untuk primary color
 import 'package:url_launcher/url_launcher.dart';
 
@@ -13,7 +15,7 @@ class SettingsTabView extends GetView<HomeController> {
 
   @override
   Widget build(BuildContext context) {
-    // Kita asumsikan SettingsTabView adalah salah satu halaman di HomeController.pages
+    final controller = Get.put(SettingController());
     return SafeArea(
       child: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
@@ -30,7 +32,7 @@ class SettingsTabView extends GetView<HomeController> {
           _buildSettingsTile(
             title: 'Edit Profil',
             icon: Iconsax.user_edit_outline,
-            onTap: () => Get.snackbar('Navigasi', 'Membuka Edit Profil...'),
+            onTap: () => Get.toNamed(Routes.EDIT_PROFILE),
           ),
           _buildSettingsTile(
             title: 'Ganti Kata Sandi',
@@ -48,11 +50,12 @@ class SettingsTabView extends GetView<HomeController> {
             onTap: () => Get.snackbar('Navigasi', 'Membuka Pengaturan Bahasa...'),
           ),
           _buildSettingsTile(
-            title: 'Tiket & Pemesanan',
+            title: 'Voucher',
             icon: Iconsax.ticket_outline,
             onTap: () {
+              Get.toNamed(Routes.MY_VOUCHERS);
               // Ganti ke tab Booking (asumsi index 1)
-              controller.changePage(1);
+              // controller.changePage(1);
             },
             showTrailingIcon: true,
           ),
@@ -65,10 +68,15 @@ class SettingsTabView extends GetView<HomeController> {
             icon: Bootstrap.bug,
             onTap: _launchBugReport,
           ),
+          _buildSettingsTile(
+            title: 'Tentang Aplikasi',
+            icon: Bootstrap.info_circle,
+            onTap: () => Get.toNamed(Routes.ABOUT),
+          ),
           const SizedBox(height: 40),
 
           // --- 4. Log Out ---
-          _buildLogoutButton(),
+          _buildLogoutButton(controller),
           const SizedBox(height: 30),
         ],
       ),
@@ -159,7 +167,7 @@ class SettingsTabView extends GetView<HomeController> {
   }
 
   // Log Out Button
-  Widget _buildLogoutButton() {
+  Widget _buildLogoutButton(SettingController controller) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: OutlinedButton.icon(
@@ -173,7 +181,7 @@ class SettingsTabView extends GetView<HomeController> {
           confirmTextColor: Colors.white,
           cancelTextColor: AppTheme.primaryColor,
           buttonColor: AppTheme.primaryColor,
-          onConfirm: () => Get.snackbar('Status', 'Anda telah Log Out!', snackPosition: SnackPosition.BOTTOM), // TODO: Lakukan proses log out sesungguhnya
+          onConfirm: () => controller.performLogout()
         ),
         style: OutlinedButton.styleFrom(
           foregroundColor: Colors.red.shade600,

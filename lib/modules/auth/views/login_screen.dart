@@ -12,174 +12,158 @@ class LoginScreen extends GetView<LoginController> {
   @override
   Widget build(BuildContext context) {
     final LoginController controller = Get.find<LoginController>();
-
+    final size = MediaQuery.of(context).size;
     return GestureDetector(
       onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
       child: Scaffold(
-        body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                AppTheme.primaryColor.withOpacity(0.8), // Biru gelap
-                Get.theme.scaffoldBackgroundColor, // Warna latar belakang tema (gelap/terang)
-              ],
-              stops: const [0.0, 0.4],
-            ),
-          ),
-          child: SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 80),
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 80),
 
-                  // Logo/Ikon Bertema Traveling
-                  Icon(
-                    Clarity.plane_line,
-                    size: 80,
-                    color: Get.theme.colorScheme.onPrimary,
-                  ),
+                // Logo/Ikon Bertema Traveling
+                Image.asset('assets/images/vly.png', width: size.width / 2, height: 100.0,),
 
-                  const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-                  // Judul
-                  Text(
-                    'login_title'.tr, // "Masuk ke Akun Anda"
-                    textAlign: TextAlign.center,
-                    style: Get.textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Get.theme.colorScheme.onPrimary,
+                // Judul
+                Text(
+                  'Masuk ke akun Anda untuk mencari layanan trip Anda.', // "Masuk ke Akun Anda"
+                  textAlign: TextAlign.center,
+                  style: Get.textTheme.bodyLarge?.copyWith(),
+                ),
+                const SizedBox(height: 80),
+
+                // --- Form Login ---
+                Column(
+                  children: [
+                    // Input Email
+                    _buildTextField(
+                      controller: controller.emailC,
+                      label: 'Email',
+                      icon: Iconsax.sms_outline,
+                      keyboardType: TextInputType.emailAddress,
+                      validator: controller.emailValidator,
                     ),
-                  ),
-                  const SizedBox(height: 80),
+                    const SizedBox(height: 20),
 
-                  // --- Form Login ---
-                  Form(
-                    key: controller.loginFormKey,
-                    child: Column(
+                    // Input Password
+                    Obx(() => _buildTextField(
+                      controller: controller.passwordC,
+                      label: 'Password',
+                      icon: Iconsax.lock_outline,
+                      obscureText: !controller.isPasswordVisible.value,
+                      keyboardType: TextInputType.text,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Password tidak boleh kosong.';
+                        }
+                        return null;
+                      },
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          controller.isPasswordVisible.value ? Iconsax.eye_slash_outline : Iconsax.eye_outline
+                        ),
+                        onPressed: () => controller.isPasswordVisible.toggle(),
+                      ),
+                    )),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        // Input Email
-                        _buildTextField(
-                          controller: controller.emailC,
-                          label: 'Email',
-                          icon: Icons.email_outlined,
-                          keyboardType: TextInputType.emailAddress,
-                          validator: controller.emailValidator,
-                        ),
-                        const SizedBox(height: 20),
-
-                        // Input Password
-                        Obx(() => _buildTextField(
-                          controller: controller.passwordC,
-                          label: 'Password',
-                          icon: Icons.lock_outline,
-                          obscureText: !controller.isPasswordVisible.value,
-                          keyboardType: TextInputType.text,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Password tidak boleh kosong.';
-                            }
-                            return null;
-                          },
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              controller.isPasswordVisible.value
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                            ),
-                            onPressed: () => controller.isPasswordVisible.toggle(),
-                          ),
-                        )),
-                        const SizedBox(height: 30),
-
-                        // Tombol Login
-                        SizedBox(
-                          width: double.infinity,
-                          child: Obx(() => ElevatedButton(
-                            onPressed: controller.isLoading.value
-                                ? null
-                                : controller.loginWithEmail,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.primaryColor,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 5,
-                            ),
-                            child: controller.isLoading.value
-                                ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                                : Text(
-                              'login_title'.tr, // Gunakan 'login_title'.tr jika tombolnya "Masuk"
-                              style: Get.textTheme.titleMedium?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          )),
-                        ),
+                        TextButton(onPressed: () => Get.toNamed(Routes.FORGOT_PASSWORD), child: Text('Lupa Password?', style: Get.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold)))
                       ],
                     ),
-                  ),
 
-                  const SizedBox(height: 40),
-
-                  // Divider "Atau"
-                  Row(
-                    children: [
-                      Expanded(child: Divider(color: Get.theme.dividerColor)),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text('ATAU', style: Get.textTheme.bodySmall),
-                      ),
-                      Expanded(child: Divider(color: Get.theme.dividerColor)),
-                    ],
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  // --- Opsi Login Sosial Media ---
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      // Login dengan Google
-                      _buildSocialButton(
-                        icon: Iconsax.google_1_bold,
-                        onPressed: controller.loginWithGoogle,
-                      ),
-                      // Login dengan Facebook
-                      _buildSocialButton(
-                        icon: Iconsax.facebook_bold,
-                        onPressed: controller.loginWithFacebook,
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 40),
-
-                  // Daftar
-                  TextButton(
-                    onPressed: () {
-                      // TODO: Navigasi ke halaman daftar
-                      Get.toNamed(Routes.REGISTER);
-                    },
-                    child: Text(
-                      'Belum punya akun? Daftar Sekarang',
-                      style: TextStyle(color: AppTheme.primaryColor),
+                    const SizedBox(height: 20),
+                    // Tombol Login
+                    SizedBox(
+                      width: double.infinity,
+                      child: Obx(() => ElevatedButton(
+                        onPressed: controller.isLoading.value
+                            ? null
+                            : controller.loginWithEmail,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: controller.isLoading.value
+                            ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                            : Text(
+                          'login_title'.tr, // Gunakan 'login_title'.tr jika tombolnya "Masuk"
+                          style: Get.textTheme.titleMedium?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      )),
                     ),
+                  ],
+                ),
+
+
+                const SizedBox(height: 20),
+
+                // Divider "Atau"
+                Row(
+                  children: [
+                    Expanded(child: Divider(color: Get.theme.dividerColor.withOpacity(0.2))),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text('ATAU', style: Get.textTheme.bodySmall),
+                    ),
+                    Expanded(child: Divider(color: Get.theme.dividerColor.withOpacity(0.2))),
+                  ],
+                ),
+
+                const SizedBox(height: 20),
+
+                ElevatedButton(
+                  onPressed: (){},
+                  style: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      side: BorderSide(color: AppTheme.primaryColor),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
                   ),
-                ],
-              ),
+                  child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Iconsax.google_1_bold, color: AppTheme.primaryColor),
+                    const SizedBox(width: 5.0),
+                    Text("Login dengan Google", style: Get.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold))
+                  ],
+                )),
+
+                const SizedBox(height: 40),
+
+                // Daftar
+                TextButton(
+                  onPressed: () {
+                    // TODO: Navigasi ke halaman daftar
+                    Get.toNamed(Routes.REGISTER);
+                  },
+                  child: Text(
+                    'Belum punya akun? Daftar Sekarang',
+                    style: TextStyle(color: AppTheme.primaryColor),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -197,6 +181,12 @@ class LoginScreen extends GetView<LoginController> {
     String? Function(String?)? validator,
     Widget? suffixIcon,
   }) {
+    const BorderRadius borderRadius = BorderRadius.all(Radius.circular(12));
+    // Warna terang untuk border yang tidak fokus/default
+    final Color lightBorderColor = Colors.grey.shade300;
+    // Warna untuk border saat fokus (gunakan warna utama theme)
+    final Color focusedBorderColor = Get.theme.primaryColor;
+
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
@@ -205,15 +195,45 @@ class LoginScreen extends GetView<LoginController> {
       style: Get.textTheme.bodyLarge,
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon, color: AppTheme.primaryColor),
+        prefixIcon: Icon(icon, color: Colors.black),
         suffixIcon: suffixIcon,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        filled: true,
-        fillColor: Get.theme.colorScheme.surface,
         contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+
+        // 💥 1. BORDER UTAMA SAAT TIDAK FOKUS (DEFAULT)
+        enabledBorder: OutlineInputBorder(
+          borderRadius: borderRadius,
+          borderSide: BorderSide(color: lightBorderColor), // Menggunakan warna terang
+        ),
+
+        // 💥 2. BORDER SAAT FOKUS
+        focusedBorder: OutlineInputBorder(
+          borderRadius: borderRadius,
+          borderSide: BorderSide(color: focusedBorderColor, width: 2.0), // Lebih tebal dan berwarna saat fokus
+        ),
+
+        // 3. BORDER UMUM (Fallback)
+        border: OutlineInputBorder(
+          borderRadius: borderRadius,
+          borderSide: BorderSide(color: lightBorderColor),
+        ),
+
+        // 4. BORDER SAAT DISABLE
+        disabledBorder: OutlineInputBorder(
+          borderRadius: borderRadius,
+          borderSide: BorderSide(color: lightBorderColor.withOpacity(0.5)),
+        ),
+
+        // 5. BORDER SAAT ERROR
+        errorBorder: const OutlineInputBorder(
+          borderRadius: borderRadius,
+          borderSide: BorderSide(color: Colors.red),
+        ),
+
+        // 6. BORDER SAAT FOKUS DAN ERROR
+        focusedErrorBorder: const OutlineInputBorder(
+          borderRadius: borderRadius,
+          borderSide: BorderSide(color: Colors.red, width: 2.0),
+        ),
       ),
     );
   }

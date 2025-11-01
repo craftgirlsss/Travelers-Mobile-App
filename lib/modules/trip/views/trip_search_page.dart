@@ -14,34 +14,38 @@ class TripSearchPage extends GetView<TripSearchController> {
   Widget build(BuildContext context) {
     // Inject Controller jika belum
     Get.put(TripSearchController());
-
-    return Scaffold(
-      appBar: AppBar(
-        // Kosongkan title, input ada di bottom
-        elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(60.0),
-          child: _buildSearchBarInput(),
-        ),
-      ),
-      body: Column(
-        children: [
-          // Tab Bar
-          _buildTabBar(),
-
-          // TabBarView (Konten Utama)
-          Expanded(
-            child: Obx(() => TabBarView(
-              controller: controller.tabController,
-              children: [
-                _buildTabContent(0), // Destinasi
-                _buildTabContent(1), // Titik Kumpul
-              ],
-            )),
+    return GestureDetector(
+      onTap: (){
+        FocusManager.instance.primaryFocus?.unfocus();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          // Kosongkan title, input ada di bottom
+          elevation: 0,
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(60.0),
+            child: _buildSearchBarInput(),
           ),
-        ],
+        ),
+        body: Column(
+          children: [
+            // Tab Bar
+            _buildTabBar(),
+
+            // TabBarView (Konten Utama)
+            Expanded(
+              child: TabBarView(
+                controller: controller.tabController,
+                children: [
+                  _buildTabContent(0), // Destinasi
+                  _buildTabContent(1), // Titik Kumpul
+                ],
+              )
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -58,6 +62,7 @@ class TripSearchPage extends GetView<TripSearchController> {
         onSubmitted: (value) => controller.performSearch(value),
         decoration: InputDecoration(
           hintText: 'Cari destinasi atau lokasi...',
+          hintStyle: TextStyle(color: Get.textTheme.bodySmall?.color?.withOpacity(0.5)),
           prefixIcon: Icon(Iconsax.search_normal_1_outline, color: Colors.grey),
           suffixIcon: controller.currentQuery.value.isNotEmpty
               ? IconButton(
@@ -80,12 +85,13 @@ class TripSearchPage extends GetView<TripSearchController> {
   Widget _buildTabBar() {
     return Container(
       color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: TabBar(
         controller: controller.tabController,
         labelColor: AppTheme.primaryColor,
         unselectedLabelColor: Colors.grey,
         indicatorColor: AppTheme.primaryColor,
+        dividerColor: Colors.transparent,
+        indicatorSize: TabBarIndicatorSize.tab,
         tabs: const [
           Tab(
               text: 'Destinasi',

@@ -22,9 +22,9 @@ class TripModel {
   final int price;
   final int discountPrice;
   final int remainingSeats;
-  final String startDate;
-  final String? mainImageUrl;
-  final ProviderModel provider;
+  String? startDate;
+  String? mainImageUrl;
+  ProviderModel provider;
 
   TripModel({
     required this.uuid,
@@ -34,7 +34,7 @@ class TripModel {
     required this.price,
     required this.discountPrice,
     required this.remainingSeats,
-    required this.startDate,
+    this.startDate,
     this.mainImageUrl,
     required this.provider,
   });
@@ -45,9 +45,9 @@ class TripModel {
       title: json['title'] ?? '',
       duration: json['duration'] ?? '',
       location: json['location'] ?? '',
-      price: json['price'] ?? 0,
-      discountPrice: json['discount_price'] ?? 0,
-      remainingSeats: json['remaining_seats'] ?? 0,
+      price: json['price'] ?? '0',
+      discountPrice: json['discount_price'] ?? '0',
+      remainingSeats: json['remaining_seats'] ?? '0',
       startDate: json['start_date'] ?? '',
       mainImageUrl: json['main_image_url'],
       provider: ProviderModel.fromJson(json['provider'] ?? {}),

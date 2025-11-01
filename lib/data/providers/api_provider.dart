@@ -8,13 +8,13 @@ import 'package:get_storage/get_storage.dart';
 import '../../config/routes/app_routes.dart';
 
 class ApiService extends GetxService {
-  final GetStorage _box = GetStorage();
-  final String _baseUrl = 'https://api-travelers.karyadeveloperindonesia.com';
+  final GetStorage box = GetStorage();
+  final String baseUrl = 'https://api-travelers.karyadeveloperindonesia.com';
   final String _refreshTokenUrl = 'https://api-travelers.karyadeveloperindonesia.com/refresh-token';
 
   // --- 1. Fungsi Umum untuk Mendapatkan Token dan Header ---
   Map<String, String> get _authHeaders {
-    final token = _box.read('token');
+    final token = box.read('token');
     return {
       'Content-Type': 'application/json',
       if (token != null) 'Authorization': 'Bearer $token',
@@ -24,16 +24,18 @@ class ApiService extends GetxService {
   // --- 2. Fungsi Utama untuk Melakukan Panggilan HTTP (Interception) ---
   Future<http.Response> get(String endpoint) async {
     return _sendRequest(() => http.get(
-      Uri.parse('$_baseUrl$endpoint'),
+      Uri.parse('$baseUrl$endpoint'),
       headers: _authHeaders,
     ));
   }
 
   Future<http.Response> post(String endpoint, {dynamic body}) async {
+    // 💥 PERBAIKAN DI SINI: Konversi body (yang diterima sebagai Map/Object) menjadi String JSON
+    final encodedBody = body != null ? jsonEncode(body) : null;
     return _sendRequest(() => http.post(
-      Uri.parse('$_baseUrl$endpoint'),
+      Uri.parse('$baseUrl$endpoint'),
       headers: _authHeaders,
-      body: body,
+      body: encodedBody, // Kirim String JSON
     ));
   }
 
@@ -65,7 +67,7 @@ class ApiService extends GetxService {
 
   // --- 3. Fungsi untuk Refresh Token ---
   Future<bool> _refreshToken() async {
-    final refreshToken = _box.read('refreshToken');
+    final refreshToken = box.read('refreshToken');
 
     if (refreshToken == null) {
       Get.log("Refresh token tidak ditemukan.");
@@ -88,8 +90,8 @@ class ApiService extends GetxService {
         final newAccessToken = refreshData['data']['token'];
         final newRefreshToken = refreshData['data']['refresh_token'];
 
-        await _box.write('token', newAccessToken);
-        await _box.write('refreshToken', newRefreshToken);
+        await box.write('token', newAccessToken);
+        await box.write('refreshToken', newRefreshToken);
 
         Get.log("Token baru berhasil disimpan.");
         return true;
@@ -106,18 +108,11 @@ class ApiService extends GetxService {
 
   // --- 4. Fungsi Logout Paksa (Token/Refresh Token Gagal) ---
   void _forceLogout() {
-    _box.remove('token');
-    _box.remove('refreshToken');
-    _box.remove('userData');
+    box.remove('token');
+    box.remove('refreshToken');
+    box.remove('userData');
 
     // Tampilkan snackbar dan arahkan ke halaman login
     Get.offAllNamed(Routes.LOGIN);
-    Get.snackbar(
-      'Sesi Berakhir',
-      'Sesi Anda telah berakhir. Silakan masuk kembali.',
-      backgroundColor: Colors.red,
-      colorText: Colors.white,
-      snackPosition: SnackPosition.BOTTOM,
-    );
   }
 }

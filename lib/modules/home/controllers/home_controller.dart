@@ -1,22 +1,47 @@
 // lib/modules/home/controllers/home_controller.dart
 
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:travelers/data/repositories/user_repository.dart';
+import '../../../data/models/international_trip_model.dart';
 import '../../../data/models/voucher_model.dart';
+import '../../../data/models/wishlist_trip_model.dart';
 import '../../../data/repositories/trip_repository.dart';
 import '../../../data/models/profile_model.dart';
 import '../../../data/models/trip_model.dart';
+import '../../../main.dart';
+import '../../../services/notification_service.dart';
+import '../views/pages/tab_bookings.dart';
 import '../views/pages/tab_settings.dart';
 import '../../../data/services/permission_service.dart';
-import '../views/pages/tab_home.dart'; // Import tab-tab yang akan dibuat
+import '../views/pages/tab_home.dart';
+import '../views/pages/tab_wishlist.dart'; // Import tab-tab yang akan dibuat
 
 class HomeController extends GetxController {
+  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   final TripRepository _repository = Get.find<TripRepository>();
+  final UserRepository _userRepository = Get.put(UserRepository());
   final PermissionService _permissionService = Get.find<PermissionService>();
+  final RxList<WishlistTripModel> wishlistTrips = <WishlistTripModel>[].obs;
+  final RxBool isWishlistLoading = true.obs;
   final RxString locationName = 'Memuat Lokasi...'.obs;
+
+  // 💥 STATE BARU: Daftar Trip Internasional
+  final RxList<InternationalTripModel> internationalTrips = RxList([]);
+  final RxBool isInternationalLoading = true.obs;
+
+  // State untuk melacak voucher yang sedang di-claim atau yang sudah berhasil di-claim.
+  // Map<voucherUuid, RxBool(isLoading)>
+  final RxMap<String, RxBool> claimLoadingStates = <String, RxBool>{}.obs;
+  // Set<voucherUuid> yang sudah berhasil diklaim.
+  final RxSet<String> claimedVoucherUuids = <String>{}.obs;
+  final RxSet<String> claimedVoucherUuidsFromApi = <String>{}.obs;
 
   // State untuk VOUCHER
   final RxList<VoucherModel> vouchers = <VoucherModel>[].obs;
@@ -35,17 +60,165 @@ class HomeController extends GetxController {
   // Daftar Halaman untuk BottomNavigationBar
   final List<Widget> pages = [
     const HomeTabView(), // 1. Home
-    const Center(child: Text('Bookings')), // 2. Booked
+    const BookingTabView(),
     const Center(child: Text("Search Placeholder")), // Index 3 (FAB)
-    const Center(child: Text('Notifikasi')), // 4. Notifikasi
+    const WishlistTabView(),
     const SettingsTabView(), // Index 5 (Pengaturan)
   ];
 
+  // --- Fungsi Helper untuk Mendapatkan Info Perangkat ---
+  Future<Map<String, String>> _getDeviceInfo() async {
+    final DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+    String platform = 'unknown';
+    String name = 'Unknown Device';
+    String model = 'Unknown Model';
+
+    try {
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        final AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+        platform = 'android';
+        name = androidInfo.model;
+        model = androidInfo.product;
+      } else if (defaultTargetPlatform == TargetPlatform.iOS) {
+        final IosDeviceInfo iosInfo = await deviceInfo.iosInfo;
+        platform = 'ios';
+        name = iosInfo.name ?? 'iOS Device';
+        model = iosInfo.model;
+      } else if (kIsWeb) {
+        // Handle web jika diperlukan
+        final WebBrowserInfo webInfo = await deviceInfo.webBrowserInfo;
+        platform = 'web';
+        name = webInfo.browserName.toString();
+        model = webInfo.platform ?? 'Web Browser';
+      }
+    } catch (e) {
+      Get.log("Failed to get device info: $e");
+    }
+
+    return {
+      'platform': platform,
+      'name': name,
+      'model': model,
+    };
+  }
+
+  // --- Modifikasi Fungsi Setup FCM ---
+  void setupFCM() async {
+    // 1. Inisialisasi Notifikasi Lokal (dari jawaban sebelumnya)
+    LocalNotificationService.initialize();
+
+    // 2. Minta Izin Notifikasi
+    FirebaseMessaging messaging = FirebaseMessaging.instance;
+    NotificationSettings settings = await messaging.requestPermission(
+      alert: true, badge: true, sound: true,
+    );
+
+    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+      // 3. Ambil Token FCM
+      final fcmToken = await messaging.getToken();
+
+      if (fcmToken != null) {
+        // 4. Ambil Info Perangkat
+        final deviceInfo = await _getDeviceInfo();
+
+        // 5. Kirim ke API Backend
+        final success = await _userRepository.updateFCMToken(
+          fcmToken: fcmToken,
+          platform: deviceInfo['platform']!,
+          deviceName: deviceInfo['name']!,
+          deviceModel: deviceInfo['model']!,
+        );
+        if (success) {
+          Get.log("FCM Token successfully sent to backend.");
+        } else {
+          Get.log("Failed to send FCM Token to backend.");
+        }
+
+        // Untuk simulasi:
+        Get.log("FCM Token obtained: $fcmToken");
+        Get.log("Device Info: ${deviceInfo}");
+
+        // 6. Setup Listener Pesan
+        _setupMessageListeners(); // (dari jawaban sebelumnya)
+      }
+    } else {
+      Get.log('User denied notification permission');
+    }
+  }
+
+  // --- Setup Listener Pesan ---
+  void _setupMessageListeners() {
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) { // 💥 Perbaikan di sini
+      print('Got a message whilst in the foreground!');
+      print('Message data: ${message.data}');
+    });
+
+    // B. Ketika user mengklik notifikasi (dari background/terminated)
+    // GANTI: _messaging.onMessageOpenedApp.listen
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) { // 💥 Perbaikan di sini
+      print('A new onMessageOpenedApp event was published!');
+    });
+
+    // C. Handle pesan dari status Terminated (Aplikasi Tertutup)
+    // Ini adalah satu-satunya yang diakses melalui instance (non-static)
+    _messaging.getInitialMessage().then((RemoteMessage? message) { // Tidak perlu diubah
+      if (message != null) {
+        print('App launched from terminated state via notification!');
+        // ...
+      }
+    });
+
+    // D. Pendaftaran handler latar belakang (Biasanya di main.dart)
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler); // Ini sudah benar
+  }
+
+  // 💥 FUNGSI BARU: Master Refresh Data
+  Future<void> refreshData() async {
+    // 1. Reset Loading States (opsional, tapi bagus untuk konsistensi)
+    isProfileLoading.value = true;
+    isTripsLoading.value = true;
+    isVoucherLoading.value = true;
+    isWishlistLoading.value = true;
+
+    // 2. Gunakan Future.wait untuk menjalankan semua fetch secara paralel dan lebih cepat
+    await Future.wait([
+      fetchUserDataAndTrips(isManualRefresh: true), // Set flag agar tidak menampilkan snackbar
+      getCurrentLocationName(),
+      fetchVouchers(),
+      fetchWishlist(),
+      fetchClaimedVouchers(),
+    ] as Iterable<Future>);
+
+    // 3. (Opsional) Tampilkan pesan sukses setelah semua selesai
+    Get.snackbar('Berhasil', 'Data halaman Beranda telah diperbarui.',
+      duration: const Duration(seconds: 2),
+      snackPosition: SnackPosition.BOTTOM,
+    );
+  }
+
+  // FUNGSI BARU: Memuat Trip Internasional (Ubah Tipe Return)
+  Future<void> fetchInternationalTrips() async {
+    isInternationalLoading.value = true;
+    try {
+      // 💥 Gunakan tipe model baru
+      final trips = await _repository.fetchInternationalTrips();
+      internationalTrips.assignAll(trips);
+    } catch (e) {
+      Get.log("Error loading international trips: $e");
+    } finally {
+      isInternationalLoading.value = false;
+    }
+  }
+
   @override
   void onInit() {
+    setupFCM();
     fetchUserDataAndTrips();
     getCurrentLocationName();
+    fetchInternationalTrips();
     fetchVouchers();
+    fetchWishlist();
+    fetchClaimedVouchers(); // <-- Panggilan baru
     super.onInit();
   }
 
@@ -55,7 +228,7 @@ class HomeController extends GetxController {
     }
   }
 
-  void fetchUserDataAndTrips() async {
+  void fetchUserDataAndTrips({bool isManualRefresh = false}) async {
     // 1. Ambil Profil Pengguna
     isProfileLoading.value = true;
     final profile = await _repository.fetchUserProfile();
@@ -158,5 +331,66 @@ class HomeController extends GetxController {
       locationName.value = 'Gagal memuat lokasi: ${e.toString().split(':')[0]}';
       print('ERROR GETTING LOCATION: $e');
     }
+  }
+
+  // Fungsi untuk memuat data wishlist (Menggunakan model baru)
+  Future<void> fetchWishlist() async {
+    isWishlistLoading.value = true;
+    // Repository sekarang mengembalikan List<WishlistTripModel>
+    final result = await _repository.fetchWishlist();
+    wishlistTrips.assignAll(result);
+    isWishlistLoading.value = false;
+  }
+
+  // --- Fungsi Baru/Modifikasi ---
+
+  Future<void> fetchClaimedVouchers() async {
+    try {
+      final result = await _repository.fetchClaimedVouchers();
+      // Simpan semua UUID yang diklaim ke dalam state reaktif
+      claimedVoucherUuidsFromApi.assignAll(result);
+    } catch (e) {
+      Get.log('Error saat memuat daftar voucher klaim: $e');
+    }
+  }
+
+  // Modifikasi fungsi klaim (setelah berhasil)
+  Future<void> claimVoucher(VoucherModel voucher) async {
+    final uuid = voucher.uuid;
+
+    // 1. Set Loading State
+    claimLoadingStates[uuid] = true.obs;
+
+    final result = await _repository.claimVoucher(uuid);
+
+    // 2. Hapus Loading State
+    claimLoadingStates.remove(uuid);
+
+    if (result['success'] == true) {
+      // 3. Update Status Otoritatif setelah klaim sukses
+      // Tambahkan UUID ke daftar yang diklaim dari API, tanpa perlu refresh semua data
+      claimedVoucherUuidsFromApi.add(uuid);
+      await fetchVouchers();
+
+      Get.snackbar(
+          'Voucher Diklaim',
+          result['message'],
+          backgroundColor: Colors.green,
+          colorText: Colors.white
+      );
+    } else {
+      // ... (error handling)
+    }
+  }
+
+  // Helper untuk View: Mengecek apakah voucher sedang dalam proses loading
+  bool isVoucherClaiming(String uuid) {
+    return claimLoadingStates[uuid]?.value ?? false;
+  }
+
+  // Helper untuk View: Mengecek apakah voucher sudah berhasil diklaim
+  @override
+  bool isVoucherClaimed(String uuid) {
+    return claimedVoucherUuidsFromApi.contains(uuid);
   }
 }

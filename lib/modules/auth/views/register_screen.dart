@@ -12,13 +12,15 @@ class RegisterScreen extends GetView<RegisterController> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
     return GestureDetector(
       onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
       child: Scaffold(
+        backgroundColor: Colors.white,
         appBar: AppBar(
-          title: Text('Daftar Akun Baru'.tr),
           backgroundColor: Colors.transparent,
           elevation: 0,
+          forceMaterialTransparency: true,
           foregroundColor: Get.theme.primaryColor,
         ),
         body: Container(
@@ -27,18 +29,18 @@ class RegisterScreen extends GetView<RegisterController> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 20),
-
+                Image.asset('assets/images/vly.png', width: size.width / 2, height: 100.0,),
                 // Ikon/Judul Traveling
+                const SizedBox(height: 20),
                 Text(
-                  'Buat Akun Travelers',
+                  'Buat Akun VLY TRIP',
                   textAlign: TextAlign.center,
                   style: Get.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  'Rencanakan perjalanan Anda bersama Travelers.',
+                  'Rencanakan perjalanan anda dengan VlyTrip.', // "Masuk ke Akun Anda"
                   textAlign: TextAlign.center,
-                  style: Get.textTheme.bodyLarge?.copyWith(color: Colors.grey),
+                  style: Get.textTheme.bodyLarge?.copyWith(),
                 ),
 
                 const SizedBox(height: 40),
@@ -51,14 +53,16 @@ class RegisterScreen extends GetView<RegisterController> {
                       _buildTextField(
                         controller: controller.nameC,
                         label: 'Nama Lengkap',
-                        icon: Icons.person_outline,
+                        // 💥 Ganti Icons.person_outline menjadi Iconsax.user_outline
+                        icon: Iconsax.user_outline,
                         validator: controller.nameValidator,
                       ),
                       const SizedBox(height: 16),
                       _buildTextField(
                         controller: controller.emailC,
                         label: 'Email',
-                        icon: Icons.email_outlined,
+                        // 💥 Ganti Icons.email_outlined menjadi Iconsax.sms_outline
+                        icon: Iconsax.sms_outline,
                         keyboardType: TextInputType.emailAddress,
                         validator: controller.emailValidator,
                       ),
@@ -66,7 +70,8 @@ class RegisterScreen extends GetView<RegisterController> {
                       _buildTextField(
                         controller: controller.phoneC,
                         label: 'Nomor Telepon',
-                        icon: Icons.phone_outlined,
+                        // 💥 Ganti Icons.phone_outlined menjadi Iconsax.phone_outline
+                        icon: Iconsax.mobile_outline,
                         keyboardType: TextInputType.phone,
                         validator: controller.phoneValidator,
                       ),
@@ -76,6 +81,9 @@ class RegisterScreen extends GetView<RegisterController> {
                       Obx(() => _buildPasswordField(
                         controller: controller.passwordC,
                         label: 'Password',
+                        // Ikon password biasanya diatur di dalam _buildPasswordField,
+                        // tapi kita bisa tambahkan ikon kekinian di sini (jika widget menerimanya)
+                        // Saya asumsikan ikon 'lock' diatur secara default di dalam _buildPasswordField
                         isVisible: controller.isPasswordVisible.value,
                         toggleVisibility: controller.isPasswordVisible.toggle,
                         validator: controller.passwordValidator,
@@ -86,6 +94,7 @@ class RegisterScreen extends GetView<RegisterController> {
                       Obx(() => _buildPasswordField(
                         controller: controller.confirmPasswordC,
                         label: 'Konfirmasi Password',
+                        // Saya asumsikan ikon 'lock' diatur secara default di dalam _buildPasswordField
                         isVisible: controller.isConfirmPasswordVisible.value,
                         toggleVisibility: controller.isConfirmPasswordVisible.toggle,
                         validator: controller.confirmPasswordValidator,
@@ -100,9 +109,11 @@ class RegisterScreen extends GetView<RegisterController> {
                 Obx(() => Row(
                   children: [
                     Checkbox(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.circular(50.0)),
                       value: controller.termsAccepted.value,
                       onChanged: (val) => controller.termsAccepted.value = val!,
                       activeColor: AppTheme.primaryColor,
+                      side: BorderSide(width: 0.3),
                     ),
                     Expanded(
                       child: GestureDetector(
@@ -120,7 +131,6 @@ class RegisterScreen extends GetView<RegisterController> {
                                 style: TextStyle(
                                   color: AppTheme.primaryColor,
                                   fontWeight: FontWeight.bold,
-                                  decoration: TextDecoration.underline,
                                 ),
                               ),
                             ],
@@ -131,18 +141,17 @@ class RegisterScreen extends GetView<RegisterController> {
                   ],
                 )),
 
-                const SizedBox(height: 25),
+                const SizedBox(height: 10),
 
                 // Tombol Daftar
                 Obx(() => ElevatedButton(
                   onPressed: controller.isLoading.value ? null : controller.registerAccount,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryColor,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    elevation: 5,
+                    elevation: 0.0,
                   ),
                   child: controller.isLoading.value
                       ? const SizedBox(
@@ -156,40 +165,39 @@ class RegisterScreen extends GetView<RegisterController> {
                   ),
                 )),
 
-                const SizedBox(height: 40),
+                const SizedBox(height: 20),
 
-                // Divider "Atau"
                 Row(
                   children: [
-                    Expanded(child: Divider(color: Get.theme.dividerColor)),
+                    Expanded(child: Divider(color: Get.theme.dividerColor.withOpacity(0.2))),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text('ATAU DAFTAR DENGAN', style: Get.textTheme.bodySmall),
+                      child: Text('Atau Daftar Dengan', style: Get.textTheme.bodySmall),
                     ),
-                    Expanded(child: Divider(color: Get.theme.dividerColor)),
+                    Expanded(child: Divider(color: Get.theme.dividerColor.withOpacity(0.2))),
                   ],
                 ),
 
-                const SizedBox(height: 30),
+                const SizedBox(height: 20),
 
                 // Opsi Social Signup
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildSocialButton(
-                      icon: Bootstrap.google,
-                      onPressed: () => controller.socialSignup('Google'),
+                ElevatedButton(
+                  onPressed: (){},
+                  style: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      side: BorderSide(color: AppTheme.primaryColor),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    _buildSocialButton(
-                      icon: FontAwesome.facebook_brand,
-                      onPressed: () => controller.socialSignup('Facebook'),
-                    ),
-                    _buildSocialButton(
-                      icon: FontAwesome.tiktok_brand,
-                      onPressed: () => controller.socialSignup('Tiktok'),
-                    ),
-                  ],
-                ),
+                    elevation: 0,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Iconsax.google_1_bold, color: AppTheme.primaryColor),
+                      const SizedBox(width: 5.0),
+                      Text("Daftar dengan Google", style: Get.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold))
+                    ],
+                  )),
 
                 const SizedBox(height: 20),
 
@@ -216,23 +224,63 @@ class RegisterScreen extends GetView<RegisterController> {
     required String label,
     required IconData icon,
     TextInputType keyboardType = TextInputType.text,
+    bool obscureText = false,
     String? Function(String?)? validator,
+    Widget? suffixIcon,
   }) {
+    const BorderRadius borderRadius = BorderRadius.all(Radius.circular(12));
+    // Warna terang untuk border yang tidak fokus/default
+    final Color lightBorderColor = Colors.grey.shade300;
+    // Warna untuk border saat fokus (gunakan warna utama theme)
+    final Color focusedBorderColor = Get.theme.primaryColor;
+
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
+      obscureText: obscureText,
       validator: validator,
       style: Get.textTheme.bodyLarge,
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon, color: AppTheme.primaryColor),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        filled: true,
-        fillColor: Get.theme.colorScheme.surface,
+        prefixIcon: Icon(icon, color: Colors.black),
+        suffixIcon: suffixIcon,
         contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+
+        // 💥 1. BORDER UTAMA SAAT TIDAK FOKUS (DEFAULT)
+        enabledBorder: OutlineInputBorder(
+          borderRadius: borderRadius,
+          borderSide: BorderSide(color: lightBorderColor), // Menggunakan warna terang
+        ),
+
+        // 💥 2. BORDER SAAT FOKUS
+        focusedBorder: OutlineInputBorder(
+          borderRadius: borderRadius,
+          borderSide: BorderSide(color: focusedBorderColor, width: 2.0), // Lebih tebal dan berwarna saat fokus
+        ),
+
+        // 3. BORDER UMUM (Fallback)
+        border: OutlineInputBorder(
+          borderRadius: borderRadius,
+          borderSide: BorderSide(color: lightBorderColor),
+        ),
+
+        // 4. BORDER SAAT DISABLE
+        disabledBorder: OutlineInputBorder(
+          borderRadius: borderRadius,
+          borderSide: BorderSide(color: lightBorderColor.withOpacity(0.5)),
+        ),
+
+        // 5. BORDER SAAT ERROR
+        errorBorder: const OutlineInputBorder(
+          borderRadius: borderRadius,
+          borderSide: BorderSide(color: Colors.red),
+        ),
+
+        // 6. BORDER SAAT FOKUS DAN ERROR
+        focusedErrorBorder: const OutlineInputBorder(
+          borderRadius: borderRadius,
+          borderSide: BorderSide(color: Colors.red, width: 2.0),
+        ),
       ),
     );
   }
@@ -245,6 +293,9 @@ class RegisterScreen extends GetView<RegisterController> {
     required VoidCallback toggleVisibility,
     String? Function(String?)? validator,
   }) {
+    const BorderRadius borderRadius = BorderRadius.all(Radius.circular(12));
+    final Color lightBorderColor = Colors.grey.shade300;
+    final Color focusedBorderColor = Get.theme.primaryColor;
     return TextFormField(
       controller: controller,
       obscureText: !isVisible,
@@ -252,18 +303,49 @@ class RegisterScreen extends GetView<RegisterController> {
       style: Get.textTheme.bodyLarge,
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(Icons.lock_outline, color: AppTheme.primaryColor),
+        prefixIcon: Icon(Iconsax.lock_outline, color: AppTheme.primaryColor),
         suffixIcon: IconButton(
-          icon: Icon(isVisible ? Icons.visibility : Icons.visibility_off),
+          icon: Icon(isVisible ? Iconsax.eye_slash_outline : Iconsax.eye_outline),
           onPressed: toggleVisibility,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
         ),
         filled: true,
         fillColor: Get.theme.colorScheme.surface,
         contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+        // 💥 1. BORDER UTAMA SAAT TIDAK FOKUS (DEFAULT)
+        enabledBorder: OutlineInputBorder(
+          borderRadius: borderRadius,
+          borderSide: BorderSide(color: lightBorderColor), // Menggunakan warna terang
+        ),
+
+        // 💥 2. BORDER SAAT FOKUS
+        focusedBorder: OutlineInputBorder(
+          borderRadius: borderRadius,
+          borderSide: BorderSide(color: focusedBorderColor, width: 2.0), // Lebih tebal dan berwarna saat fokus
+        ),
+
+        // 3. BORDER UMUM (Fallback)
+        border: OutlineInputBorder(
+          borderRadius: borderRadius,
+          borderSide: BorderSide(color: lightBorderColor),
+        ),
+
+        // 4. BORDER SAAT DISABLE
+        disabledBorder: OutlineInputBorder(
+          borderRadius: borderRadius,
+          borderSide: BorderSide(color: lightBorderColor.withOpacity(0.5)),
+        ),
+
+        // 5. BORDER SAAT ERROR
+        errorBorder: const OutlineInputBorder(
+          borderRadius: borderRadius,
+          borderSide: BorderSide(color: Colors.red),
+        ),
+
+        // 6. BORDER SAAT FOKUS DAN ERROR
+        focusedErrorBorder: const OutlineInputBorder(
+          borderRadius: borderRadius,
+          borderSide: BorderSide(color: Colors.red, width: 2.0),
+        ),
       ),
     );
   }

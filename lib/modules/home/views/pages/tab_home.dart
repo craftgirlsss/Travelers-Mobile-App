@@ -4,124 +4,286 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:intl/intl.dart';
+import 'package:shimmer/shimmer.dart';
 import '../../../../config/routes/app_routes.dart';
+import '../../../../data/models/international_trip_model.dart';
 import '../../../../data/models/trip_model.dart';
 import '../../../../data/models/voucher_model.dart'; // Pastikan ini terimport
+import '../../../../presentation/widgets/home_custom_appbar.dart';
 import '../../controllers/home_controller.dart';
 import '../../../../presentation/themes/app_theme.dart';
 
 class HomeTabView extends GetView<HomeController> {
   const HomeTabView({super.key});
 
+  // 💥 Fungsi handler refresh
+  Future<void> _handleRefresh() async {
+    await controller.refreshData();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      if (controller.isTripsLoading.value && controller.allTrips.isEmpty) {
-        return const Center(child: CircularProgressIndicator());
-      }
-
-      if (controller.allTrips.isEmpty && !controller.isTripsLoading.value) {
-        return Center(
-            child: Text('Saat ini tidak ada trip yang tersedia.', style: Get.textTheme.titleMedium)
-        );
-      }
-
-      return GestureDetector(
+    return GestureDetector(
         onTap: (){
           FocusManager.instance.primaryFocus?.unfocus();
         },
-        child: SafeArea(
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // --- 1. Header & Greeting ---
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-                  child: _buildHeader(context),
-                ),
-
-                // --- 2. Search Bar & Filter ---
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: _buildSearchBar(),
-                ),
-                const SizedBox(height: 20),
-
-                // --- 3. Voucher Section ---
-                // GANTI: Panggil fungsi _buildVoucherSection yang benar
-                _buildVoucherSection(controller),
-                const SizedBox(height: 30), // Naikkan sedikit padding untuk pemisah
-
-                // --- 4. Travel Places Section (Horizontal List) ---
-                Padding(
-                  padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 10),
-                  child: _buildSectionHeader(
-                      title: 'Travel Places',
-                      onShowMore: () => Get.snackbar('Navigasi', 'Melihat semua destinasi...', snackPosition: SnackPosition.BOTTOM)
-                  ),
-                ),
-
-                // Sub-header (Pill Tabs)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Row(
-                    children: [
-                      _buildPillTab('All', true),
-                      _buildPillTab('Latest', false),
-                      _buildPillTab('Popular', false),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 15),
-
-                // Horizontal List View of Trips
-                SizedBox(
-                  height: 250,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
+        child: RefreshIndicator(
+          onRefresh: _handleRefresh,
+          color: Get.theme.primaryColor,
+          child: Scaffold(
+            appBar: const HomeCustomAppBar(),
+            body: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // --- 1. Search Bar & Filter ---
+                  Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    itemCount: controller.allTrips.length,
-                    itemBuilder: (context, index) {
-                      return ModernTripCard(trip: controller.allTrips[index]);
-                    },
+                    child: _buildSearchBar(),
                   ),
-                ),
+                  const SizedBox(height: 15),
 
-                const SizedBox(height: 40),
+                  // --- 2. Voucher Section (Dengan Shimmer) ---
+                  _buildVoucherSection(controller),
+                  const SizedBox(height: 20),
 
-                // --- 5. Group Travel Section (Placeholder) ---
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: _buildSectionHeader(
-                      title: 'Group Travel',
-                      onShowMore: () => Get.snackbar('Navigasi', 'Melihat semua grup travel...', snackPosition: SnackPosition.BOTTOM)
+                  // --- 3. Travel Places Section (Horizontal List) ---
+                  Padding(
+                    padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 10),
+                    child: _buildSectionHeader(
+                        title: 'Travel Places',
+                        onShowMore: () => Get.snackbar('Navigasi', 'Melihat semua destinasi...', snackPosition: SnackPosition.BOTTOM)
+                    ),
                   ),
-                ),
 
-                // Horizontal list Group Travel placeholder
-                SizedBox(
-                  height: 140,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
-                    children: [
-                      _buildGroupCardPlaceholder('Kuakata Day Long Trip', '2 Days'),
-                      _buildGroupCardPlaceholder('Bromo Sunrise', '1 Day'),
-                      _buildGroupCardPlaceholder('Lombok Honeymoon', '5 Days'),
-                    ],
+                  // Sub-header (Pill Tabs)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Row(
+                      children: [
+                        _buildPillTab('All', true),
+                        _buildPillTab('Latest', false),
+                        _buildPillTab('Popular', false),
+                      ],
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 15),
 
-                const SizedBox(height: 40),
-              ],
+                  // Horizontal List View of Trips (Dengan Shimmer)
+                  Container(
+                    margin: const EdgeInsets.symmetric(vertical: 0.0),
+                    height: 248,
+                    child: Obx(
+                      () {
+                        // if (controller.isTripsLoading.value && controller.allTrips.isEmpty) {
+                        //   // 💥 Tampilkan Shimmer untuk Trip Cards
+                        //   return ListView.builder(
+                        //     scrollDirection: Axis.horizontal,
+                        //     padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        //     itemCount: 3, // Jumlah item shimmer yang ingin ditampilkan
+                        //     itemBuilder: (context, index) => _buildTripCardShimmer(),
+                        //   );
+                        // }
+
+                        if (controller.allTrips.isEmpty && !controller.isTripsLoading.value) {
+                          return SizedBox(
+                            width: double.infinity,
+                            child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(Iconsax.car_outline),
+                                    const SizedBox(height: 10),
+                                    Text('Saat ini tidak ada trip yang tersedia.', style: Get.textTheme.bodyMedium),
+                                  ],
+                                )
+                            ),
+                          );
+                        }
+
+                        return ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          itemCount: controller.allTrips.length,
+                          itemBuilder: (context, index) {
+                            return ModernTripCard(trip: controller.allTrips[index]);
+                          },
+                        );
+                      }
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  _buildInternationalTripsSection(controller),
+
+                  const SizedBox(height: 40),
+
+                  // --- 4. Group Travel Section (Placeholder) ---
+                  // ... (tetap sama)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: _buildSectionHeader(
+                        title: 'Group Travel',
+                        onShowMore: () => Get.snackbar('Navigasi', 'Melihat semua grup travel...', snackPosition: SnackPosition.BOTTOM)
+                    ),
+                  ),
+
+                  // Horizontal list Group Travel placeholder
+                  SizedBox(
+                    height: 140,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+                      children: [
+                        _buildGroupCardPlaceholder('Kuakata Day Long Trip', '2 Days'),
+                        _buildGroupCardPlaceholder('Bromo Sunrise', '1 Day'),
+                        _buildGroupCardPlaceholder('Lombok Honeymoon', '5 Days'),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 40),
+                ],
+              ),
             ),
           ),
         ),
       );
+  }
+
+  // 💥 IMPLEMENTASI SECTION BARU
+  Widget _buildInternationalTripsSection(HomeController controller) {
+    return Obx(() {
+      // 1. LOADING STATE: Tampilkan Shimmer
+      if (controller.isInternationalLoading.value) {
+        return _buildTripCardShimmer();
+      }
+
+      final trips = controller.internationalTrips;
+
+      // 2. EMPTY STATE: Sembunyikan jika tidak ada data
+      if (trips.isEmpty) {
+        return const SizedBox.shrink();
+      }
+
+      // 3. DATA STATE: Tampilkan daftar trip
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Judul Section
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24.0),
+            child: Text(
+              'Destinasi Internasional Pilihan',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+          ),
+          const SizedBox(height: 15),
+
+          // List Horizontal Trip Cards
+          SizedBox(
+            height: 260, // Tinggi yang sesuai untuk kartu
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              itemCount: trips.length,
+              itemBuilder: (context, index) {
+                final trip = trips[index];
+
+                return Padding(
+                  padding: EdgeInsets.only(right: index == trips.length - 1 ? 0 : 15),
+                  // 💥 GUNAKAN WIDGET BARU DENGAN DATA INTERNATIONAL TRIP
+                  child: InternationalModernTripCard(trip: trip),
+                );
+              },
+            ),
+          ),
+        ],
+      );
     });
   }
 
+// 💥 FUNGSI IMPLEMENTASI SHIMMER (Meniru InternationalModernTripCard)
+  Widget _buildTripCardShimmer() {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey.shade300,
+      highlightColor: Colors.grey.shade100,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Shimmer untuk Judul Section
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: Container(
+              width: 250,
+              height: 24,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+          ),
+          const SizedBox(height: 15),
+
+          // Shimmer untuk List Horizontal Cards
+          SizedBox(
+            height: 260,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              itemCount: 3,
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 15),
+                  child: Container(
+                    width: 170, // Lebar card disesuaikan
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Area Gambar (tinggi 145)
+                        Container(
+                          height: 145,
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
+                          ),
+                        ),
+                        // Detail Teks Placeholder
+                        Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(height: 14, width: 120, color: Colors.white), // Judul
+                              const SizedBox(height: 8),
+                              Container(height: 10, width: 100, color: Colors.white), // Lokasi
+                              const SizedBox(height: 10),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Container(height: 18, width: 50, color: Colors.white), // Durasi
+                                  Container(height: 18, width: 70, color: Colors.white), // Harga
+                                ],
+                              )
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
   // --- Widget Helper ---
 
   // PASTIKAN: Semua fungsi helper diletakkan di dalam HomeTabView
@@ -129,49 +291,67 @@ class HomeTabView extends GetView<HomeController> {
   // WIDGET VOUCHER SECTION
   Widget _buildVoucherSection(HomeController controller) {
     return Padding(
-      // GANTI: Gunakan padding 16.0 untuk konsistensi
       padding: const EdgeInsets.only(left: 16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.only(right: 16.0), // Padding kanan untuk header
+            padding: const EdgeInsets.only(right: 16.0),
             child: _buildSectionHeader(
                 title: 'Voucher',
-                // Berikan fungsi yang benar untuk Show More (meskipun isViewAllVisible: false)
                 onShowMore: () => Get.snackbar('Navigasi', 'Melihat semua Voucher', snackPosition: SnackPosition.BOTTOM)
             ),
           ),
           const SizedBox(height: 15),
 
-          controller.isVoucherLoading.value
-              ? const SizedBox(height: 120, child: Center(child: CircularProgressIndicator()))
-              : (controller.vouchers.isEmpty
-              ? const Padding(
-            padding: EdgeInsets.only(right: 16.0),
-            child: Text('Tidak ada voucher aktif saat ini.'),
-          )
-              : SizedBox(
-            height: 120,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: controller.vouchers.length,
-              itemBuilder: (context, index) {
-                // Pastikan pemanggilan fungsi _buildVoucherCard dilakukan di sini
-                return _buildVoucherCard(controller.vouchers[index]);
-              },
-            ),
-          )),
+          Obx(() { // Gunakan Obx di sini agar hanya bagian ini yang rebuild saat loading
+            if (controller.isVoucherLoading.value) {
+              // 💥 Tampilkan Shimmer untuk Voucher
+              return _buildVoucherShimmer();
+            }
+
+            if (controller.vouchers.isEmpty) {
+              return const Padding(
+                padding: EdgeInsets.only(right: 16.0),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Icon(Iconsax.discount_circle_outline),
+                      const SizedBox(height: 4.0),
+                      Text('Tidak ada voucher aktif saat ini.'),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            return SizedBox(
+              height: 120,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: controller.vouchers.length,
+                itemBuilder: (context, index) {
+                  return _buildVoucherCard(controller.vouchers[index]);
+                },
+              ),
+            );
+          }),
         ],
       ),
     );
   }
 
   // WIDGET VOUCHER CARD
-  Widget _buildVoucherCard(VoucherModel voucher) {
-    final currencyFormatter = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp', decimalDigits: 0);
+  // Di dalam file View yang menampilkan daftar voucher (misalnya home_tab.dart)
 
-    // FIX: Hapus tanda seru (!) yang tidak perlu jika model sudah diatur non-nullable
+  Widget _buildVoucherCard(VoucherModel voucher) {
+    final HomeController controller = Get.find<HomeController>();
+    final currencyFormatter = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp', decimalDigits: 0);
+    final uuid = voucher.uuid;
+
+    // Pastikan properti non-nullable dicek atau dihandle jika tidak diatur.
     final Duration remaining = voucher.validUntil!.difference(DateTime.now());
     final String expiresIn = remaining.inDays > 0
         ? '${remaining.inDays} Hari'
@@ -181,104 +361,194 @@ class HomeTabView extends GetView<HomeController> {
         ? '${voucher.value!.toInt()}% OFF'
         : currencyFormatter.format(voucher.value);
 
-    return Container(
-      width: 250,
-      margin: const EdgeInsets.only(right: 15),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          // Background Gambar Voucher (Opsional)
-          if (voucher.imagePath != null)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(15),
-              child: Image.network(
-                voucher.imagePath!,
-                width: 250,
-                height: 120,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(color: AppTheme.primaryColor.withOpacity(0.1)),
-              ),
-            ),
+    return Obx(() {
+      final isClaiming = controller.isVoucherClaiming(uuid);
+      // Sekarang, isClaimed akan otomatis mengambil data dari claimedVoucherUuidsFromApi
+      final isClaimed = controller.isVoucherClaimed(uuid);
+      final bool isDisabled = isClaimed || isClaiming || (voucher.remainingVouchers ?? 0) <= 0;
 
-          // Isi Voucher dengan Overlay
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: (voucher.imagePath == null)
-                  ? AppTheme.primaryColor.withOpacity(0.8)
-                  : Colors.black.withOpacity(0.4), // Overlay gelap jika ada gambar
-              borderRadius: BorderRadius.circular(15),
+      // Tentukan warna utama card berdasarkan status
+      final Color cardColor = isClaimed ? Colors.green.shade600 : AppTheme.primaryColor;
+      final Color buttonColor = isClaimed ? Colors.green : AppTheme.primaryColor;
+
+      return Container(
+        width: 250,
+        margin: const EdgeInsets.only(right: 15),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Top: Value & Code
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      valueText,
-                      style: Get.textTheme.titleLarge?.copyWith(
+          ],
+        ),
+        child: Stack(
+          children: [
+            // Background Gambar Voucher (Opsional)
+            if (voucher.imagePath != null)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(15),
+                child: Image.network(
+                  voucher.imagePath!,
+                  width: 250,
+                  height: 120,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(color: AppTheme.primaryColor.withOpacity(0.1)),
+                ),
+              ),
+
+            // Isi Voucher dengan Overlay
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: (voucher.imagePath == null)
+                    ? cardColor.withOpacity(0.8)
+                    : Colors.black.withOpacity(0.5), // Overlay gelap jika ada gambar
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // 1. Top Section: Value & Code
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        valueText,
+                        style: Get.textTheme.titleLarge?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
                           color: Colors.white,
-                          fontWeight: FontWeight.bold
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          voucher.code ?? 'KODE',
+                          style: Get.textTheme.bodyMedium?.copyWith(
+                              color: cardColor,
+                              fontWeight: FontWeight.bold
+                          ),
+                        ),
                       ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(6),
+                    ],
+                  ),
+
+                  const SizedBox(height: 5), // Spacer antara header dan footer
+
+                  // 2. Middle Section: Deskripsi Singkat & Info Min. Pembelian
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Min. Pembelian: ${currencyFormatter.format(voucher.minPurchase)}',
+                        style: Get.textTheme.bodySmall?.copyWith(color: Colors.white70),
                       ),
-                      child: Text(
-                        voucher.code ?? '',
-                        style: Get.textTheme.bodyMedium?.copyWith(
-                            color: AppTheme.primaryColor,
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Sisa: ${voucher.remainingVouchers} kupon',
+                            style: Get.textTheme.bodySmall?.copyWith(color: Colors.white),
+                          ),
+                          Text(
+                            'Exp: $expiresIn',
+                            style: Get.textTheme.bodySmall?.copyWith(color: Colors.yellowAccent),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+
+
+                  // 3. Bottom Section: Tombol Klaim (Modifikasi Utama)
+                  SizedBox(
+                    width: 110,
+                    height: 25,
+                    child: ElevatedButton(
+                      onPressed: isDisabled
+                        ? null
+                        : () => controller.claimVoucher(voucher),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: buttonColor,
+                        padding: EdgeInsets.zero,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        elevation: 0,
+                      ),
+                      child: isClaiming
+                          ? const SizedBox(
+                        height: 15,
+                        width: 15,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                          : Text(
+                        isClaimed ? 'Voucher Diklaim' : 'Klaim Sekarang',
+                        style: Get.textTheme.titleSmall?.copyWith(
+                            color: Colors.white,
                             fontWeight: FontWeight.bold
                         ),
                       ),
                     ),
-                  ],
-                ),
-
-                // Bottom: Min Purchase & Expiry
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Min. Pembelian: ${currencyFormatter.format(voucher.minPurchase)}',
-                      style: Get.textTheme.bodySmall?.copyWith(color: Colors.white70),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Sisa: ${voucher.remainingVouchers} kupon',
-                          style: Get.textTheme.bodySmall?.copyWith(color: Colors.white),
-                        ),
-                        Text(
-                          'Berakhir dalam $expiresIn',
-                          style: Get.textTheme.bodySmall?.copyWith(color: Colors.yellowAccent),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+
+            // Overlay 'Klaimed' Badge (Opsional, untuk visual yang lebih kuat)
+            if (isClaimed)
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.4),
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        image: DecorationImage(image: AssetImage('assets/images/claimed.png'))
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      );
+    });
+  }
+
+  // 💥 Shimmer untuk Voucher Card
+  Widget _buildVoucherShimmer() {
+    return SizedBox(
+      height: 120,
+      child: Shimmer.fromColors(
+        baseColor: Colors.grey.shade300,
+        highlightColor: Colors.grey.shade100,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          itemCount: 2, // Tampilkan 2 placeholder voucher
+          itemBuilder: (context, index) {
+            return Container(
+              width: 250,
+              height: 120,
+              margin: const EdgeInsets.only(right: 15),
+              decoration: BoxDecoration(
+                color: Colors.white, // Warna shimmer
+                borderRadius: BorderRadius.circular(15),
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -305,8 +575,8 @@ class HomeTabView extends GetView<HomeController> {
                     radius: 20,
                     backgroundColor: Get.theme.primaryColor.withOpacity(0.2),
                     backgroundImage: pictureUrl != null
-                        ? NetworkImage("https://example.com/images/$pictureUrl") as ImageProvider
-                        : null,
+                      ? NetworkImage("https://example.com/images/$pictureUrl") as ImageProvider
+                      : null,
                     child: pictureUrl == null ? Text(name[0], style: const TextStyle(color: Colors.white)) : null,
                   ),
                   const SizedBox(width: 10),
@@ -330,7 +600,7 @@ class HomeTabView extends GetView<HomeController> {
               ),
             ),
             IconButton(
-              icon: const Icon(Iconsax.textalign_right_outline, size: 28),
+              icon: const Icon(Iconsax.notification_outline, size: 23),
               onPressed: () => Get.snackbar('Navigasi', 'Membuka Menu Samping...', snackPosition: SnackPosition.BOTTOM),
             ),
           ],
@@ -540,6 +810,149 @@ class ModernTripCard extends StatelessWidget {
                 children: [
                   // Title
                   Text(
+                    trip.title ?? 'Unknown Title',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Get.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 5),
+                  // Location
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on_outlined, size: 14, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          trip.location ?? 'Unknown Location',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Get.textTheme.bodySmall?.copyWith(color: Colors.grey),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  // Duration/Price
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // 💥 PERBAIKAN: Bungkus Container Durasi dengan Flexible
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Get.theme.primaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(15.0),
+                          ),
+                          child: Text(
+                            // Pastikan teks yang panjang dipotong jika perlu
+                            trip.duration ?? '0 Day',
+                            style: Get.textTheme.bodySmall?.copyWith(
+                              color: Get.theme.primaryColor,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1, // Pastikan hanya satu baris
+                            overflow: TextOverflow.ellipsis, // Potong jika terlalu panjang
+                          ),
+                        ),
+                      ),
+
+                      // Beri sedikit jarak antara Durasi dan Harga
+                      const SizedBox(width: 8),
+
+                      // Harga (widget ini mengambil ruang yang dibutuhkan)
+                      Text(
+                        "Rp${(trip.price / 1000).toStringAsFixed(0)}K", // Tampilkan dalam format RpX K
+                        style: Get.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class InternationalModernTripCard extends StatelessWidget {
+  final InternationalTripModel trip;
+
+  const InternationalModernTripCard({super.key, required this.trip});
+
+  @override
+  Widget build(BuildContext context) {
+    // Menggunakan getter yang sudah dibuat di InternationalTripModel
+    final double displayPrice = trip.discountPrice > 0 ? trip.discountPrice : trip.price;
+
+    return GestureDetector(
+      onTap: (){
+        // Navigasi ke detail menggunakan UUID
+        Get.toNamed(Routes.TRIP_DETAIL, arguments: trip.uuid);
+      },
+      child: Container(
+        width: 170,
+        // Margin dihilangkan dari sini karena akan ditangani di ListView.builder
+        decoration: BoxDecoration(
+          color: Get.theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+              color: Get.theme.shadowColor.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Gambar Trip
+            Stack(
+              children: [
+                Container(
+                  height: 145,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+                    // 💥 Menggunakan fullImageUrl dari InternationalTripModel
+                    image: trip.fullImageUrl.isNotEmpty
+                        ? DecorationImage(
+                      image: NetworkImage(trip.fullImageUrl),
+                      fit: BoxFit.cover,
+                    )
+                        : null,
+                  ),
+                  child: trip.fullImageUrl.isEmpty ? const Center(child: Icon(Icons.image, size: 40, color: Colors.white70)) : null,
+                ),
+                // Ikon Bookmark di Sudut Kanan Atas
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.8),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(Icons.bookmark_border, size: 20, color: Get.theme.primaryColor),
+                  ),
+                ),
+              ],
+            ),
+
+            // Detail Teks
+            Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title
+                  Text(
                     trip.title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -566,24 +979,31 @@ class ModernTripCard extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Get.theme.primaryColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          trip.duration,
-                          style: Get.textTheme.bodySmall?.copyWith(
-                            color: Get.theme.primaryColor,
-                            fontWeight: FontWeight.bold,
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Get.theme.primaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(15.0),
+                          ),
+                          child: Text(
+                            trip.duration,
+                            style: Get.textTheme.bodySmall?.copyWith(
+                              color: Get.theme.primaryColor,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ),
 
+                      const SizedBox(width: 8),
+
                       // Harga
                       Text(
-                        "Rp${(trip.price / 1000).toStringAsFixed(0)}K", // Tampilkan dalam format RpX K
+                        // 💥 Menggunakan displayPrice yang sudah double
+                        "Rp${(displayPrice / 1000).toStringAsFixed(0)}K",
                         style: Get.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
