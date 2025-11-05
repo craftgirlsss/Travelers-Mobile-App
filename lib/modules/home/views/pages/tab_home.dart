@@ -16,7 +16,6 @@ import '../../../../presentation/themes/app_theme.dart';
 class HomeTabView extends GetView<HomeController> {
   const HomeTabView({super.key});
 
-  // 💥 Fungsi handler refresh
   Future<void> _handleRefresh() async {
     await controller.refreshData();
   }
@@ -70,48 +69,42 @@ class HomeTabView extends GetView<HomeController> {
                   const SizedBox(height: 15),
 
                   // Horizontal List View of Trips (Dengan Shimmer)
-                  Container(
-                    margin: const EdgeInsets.symmetric(vertical: 0.0),
-                    height: 248,
-                    child: Obx(
-                      () {
-                        // if (controller.isTripsLoading.value && controller.allTrips.isEmpty) {
-                        //   // 💥 Tampilkan Shimmer untuk Trip Cards
-                        //   return ListView.builder(
-                        //     scrollDirection: Axis.horizontal,
-                        //     padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        //     itemCount: 3, // Jumlah item shimmer yang ingin ditampilkan
-                        //     itemBuilder: (context, index) => _buildTripCardShimmer(),
-                        //   );
-                        // }
+                  // Container(
+                  //   margin: const EdgeInsets.symmetric(vertical: 0.0),
+                  //   height: 248,
+                  //   child: Obx(
+                  //     () {
+                  //       if (controller.allTrips.isEmpty && !controller.isTripsLoading.value) {
+                  //         return SizedBox(
+                  //           width: double.infinity,
+                  //           child: Center(
+                  //               child: Column(
+                  //                 mainAxisAlignment: MainAxisAlignment.center,
+                  //                 children: [
+                  //                   const Icon(Iconsax.car_outline),
+                  //                   const SizedBox(height: 10),
+                  //                   Text('Saat ini tidak ada trip yang tersedia.', style: Get.textTheme.bodyMedium),
+                  //                 ],
+                  //               )
+                  //           ),
+                  //         );
+                  //       }
+                  //
+                  //       return ListView.builder(
+                  //         scrollDirection: Axis.horizontal,
+                  //         padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  //         itemCount: controller.allTrips.length,
+                  //         itemBuilder: (context, index) {
+                  //           return ModernTripCard(trip: controller.allTrips[index]);
+                  //         },
+                  //       );
+                  //     }
+                  //   ),
+                  // ),
 
-                        if (controller.allTrips.isEmpty && !controller.isTripsLoading.value) {
-                          return SizedBox(
-                            width: double.infinity,
-                            child: Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const Icon(Iconsax.car_outline),
-                                    const SizedBox(height: 10),
-                                    Text('Saat ini tidak ada trip yang tersedia.', style: Get.textTheme.bodyMedium),
-                                  ],
-                                )
-                            ),
-                          );
-                        }
+                  const SizedBox(height: 20),
 
-                        return ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          itemCount: controller.allTrips.length,
-                          itemBuilder: (context, index) {
-                            return ModernTripCard(trip: controller.allTrips[index]);
-                          },
-                        );
-                      }
-                    ),
-                  ),
+                  _buildLocalTripsSection(controller),
 
                   const SizedBox(height: 20),
 
@@ -152,48 +145,115 @@ class HomeTabView extends GetView<HomeController> {
       );
   }
 
-  // 💥 IMPLEMENTASI SECTION BARU
   Widget _buildInternationalTripsSection(HomeController controller) {
     return Obx(() {
-      // 1. LOADING STATE: Tampilkan Shimmer
       if (controller.isInternationalLoading.value) {
         return _buildTripCardShimmer();
       }
-
       final trips = controller.internationalTrips;
-
-      // 2. EMPTY STATE: Sembunyikan jika tidak ada data
       if (trips.isEmpty) {
         return const SizedBox.shrink();
       }
-
-      // 3. DATA STATE: Tampilkan daftar trip
+      final int maxItems = 5;
+      final int displayCount = trips.length.clamp(0, maxItems);
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Judul Section
-          const Padding(
+          Padding(
             padding: EdgeInsets.symmetric(horizontal: 24.0),
-            child: Text(
-              'Destinasi Internasional Pilihan',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                      'Destinasi Internasional Pilihan',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)
+                  )
+                ),
+                TextButton(
+                  onPressed: (){},
+                  style: TextButton.styleFrom(padding: EdgeInsets.symmetric(horizontal: 3.0)),
+                  child: Row(
+                    children: [
+                      Text('Show More', style: TextStyle(color: AppTheme.primaryColor)),
+                      Icon(Iconsax.arrow_right_3_outline, size: 16, color: AppTheme.primaryColor),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 15),
-
-          // List Horizontal Trip Cards
           SizedBox(
             height: 260, // Tinggi yang sesuai untuk kartu
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              itemCount: trips.length,
+              itemCount: displayCount,
               itemBuilder: (context, index) {
                 final trip = trips[index];
-
                 return Padding(
-                  padding: EdgeInsets.only(right: index == trips.length - 1 ? 0 : 15),
-                  // 💥 GUNAKAN WIDGET BARU DENGAN DATA INTERNATIONAL TRIP
+                  padding: EdgeInsets.only(right: index == displayCount - 1 ? 0 : 15),
+                  child: InternationalModernTripCard(trip: trip),
+                );
+              },
+            ),
+          ),
+        ],
+      );
+    });
+  }
+
+  Widget _buildLocalTripsSection(HomeController controller) {
+    return Obx(() {
+      if (controller.isLocalLoading.value) {
+        return _buildTripCardShimmer();
+      }
+      final trips = controller.localTrips;
+      if (trips.isEmpty) {
+        return const SizedBox.shrink();
+      }
+      final int maxItems = 5;
+      final int displayCount = trips.length.clamp(0, maxItems);
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    'Destinasi Lokal Pilihan',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                TextButton(
+                  onPressed: (){},
+                  style: TextButton.styleFrom(padding: EdgeInsets.symmetric(horizontal: 3.0)),
+                  child: Row(
+                    children: [
+                      Text('Show More', style: TextStyle(color: AppTheme.primaryColor)),
+                      Icon(Iconsax.arrow_right_3_outline, size: 16, color: AppTheme.primaryColor),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 15),
+          SizedBox(
+            height: 260, // Tinggi yang sesuai untuk kartu
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              itemCount: displayCount,
+              itemBuilder: (context, index) {
+                final trip = trips[index];
+                return Padding(
+                  padding: EdgeInsets.only(right: index == displayCount - 1 ? 0 : 15),
                   child: InternationalModernTripCard(trip: trip),
                 );
               },

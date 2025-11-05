@@ -23,7 +23,7 @@ class TripSearchController extends GetxController with GetSingleTickerProviderSt
 
   @override
   void onInit() {
-    tabController = TabController(length: 2, vsync: this);
+    tabController = TabController(length: 3, vsync: this);
     tabController.addListener(_handleTabChange);
     super.onInit();
   }
@@ -58,11 +58,11 @@ class TripSearchController extends GetxController with GetSingleTickerProviderSt
     List<TripModel> results = [];
 
     try {
-      if (activeTabIndex.value == 0) {
-        // Tab 0: Pencarian Destinasi
+      if(activeTabIndex.value == 0) {
+        results = await _tripRepository.searchTripsByName(trimmedQuery);
+      } else if (activeTabIndex.value == 1) {
         results = await _tripRepository.searchTripsByDestination(trimmedQuery);
-      } else {
-        // Tab 1: Pencarian Titik Kumpul
+      } else if(activeTabIndex.value == 2) {
         results = await _tripRepository.searchTripsByGatheringPoint(trimmedQuery);
       }
 

@@ -40,7 +40,8 @@ class TripSearchPage extends GetView<TripSearchController> {
                 controller: controller.tabController,
                 children: [
                   _buildTabContent(0), // Destinasi
-                  _buildTabContent(1), // Titik Kumpul
+                  _buildTabContent(1), // Destinasi
+                  _buildTabContent(2), // Titik Kumpul
                 ],
               )
             ),
@@ -94,7 +95,11 @@ class TripSearchPage extends GetView<TripSearchController> {
         indicatorSize: TabBarIndicatorSize.tab,
         tabs: const [
           Tab(
-              text: 'Destinasi',
+              text: 'Nama Destinasi',
+              icon: Icon(Iconsax.airplane_outline, size: 20)
+          ),
+          Tab(
+              text: 'Tujuan Destinasi',
               icon: Icon(Iconsax.location_outline, size: 20)
           ),
           Tab(
@@ -108,7 +113,20 @@ class TripSearchPage extends GetView<TripSearchController> {
 
   Widget _buildTabContent(int tabIndex) {
     return Obx(() {
-      final tabLabel = tabIndex == 0 ? 'Destinasi' : 'Titik Kumpul';
+      String tabLabel = '';
+      switch(tabIndex){
+        case (0):
+          tabLabel = "Nama Destinasi";
+          break;
+        case (1):
+          tabLabel = "Tujuan Destinasi";
+          break;
+        case (2):
+          tabLabel = "Titik Kumpul";
+          break;
+        default:
+          tabLabel = "Nama Destinasi";
+      }
 
       if (controller.isLoading.value) {
         return const Center(child: CircularProgressIndicator());
@@ -167,7 +185,7 @@ class TripSearchPage extends GetView<TripSearchController> {
     // Anggap trip adalah TripModel, dan Anda perlu data dari ModernTripCard
     final String mainImageUrl = trip.mainImageUrl ?? '';
     final String priceText = "Rp${(trip.price / 1000).toStringAsFixed(0)}K";
-
+    print("https://provider-travelers.karyadeveloperindonesia.com/$mainImageUrl");
     return GestureDetector(
       onTap: (){
         Get.toNamed(Routes.TRIP_DETAIL, arguments: trip.uuid);
@@ -188,11 +206,11 @@ class TripSearchPage extends GetView<TripSearchController> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10),
                 image: mainImageUrl.isNotEmpty
-                    ? DecorationImage(
-                  image: NetworkImage("https://provider-travelers.karyadeveloperindonesia.com/$mainImageUrl"),
-                  fit: BoxFit.cover,
-                )
-                    : null,
+                  ? DecorationImage(
+                      image: NetworkImage("https://provider-travelers.karyadeveloperindonesia.com/$mainImageUrl"),
+                      fit: BoxFit.cover,
+                    )
+                  : null,
                 color: Colors.grey[200],
               ),
               child: mainImageUrl.isEmpty ? const Center(child: Icon(Iconsax.image_outline, size: 30, color: Colors.white70)) : null,

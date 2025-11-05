@@ -33,8 +33,10 @@ class HomeController extends GetxController {
   final RxString locationName = 'Memuat Lokasi...'.obs;
 
   // 💥 STATE BARU: Daftar Trip Internasional
-  final RxList<InternationalTripModel> internationalTrips = RxList([]);
   final RxBool isInternationalLoading = true.obs;
+  final RxBool isLocalLoading = true.obs;
+  final RxList<InternationalTripModel> internationalTrips = RxList([]);
+  final RxList<InternationalTripModel> localTrips = RxList([]);
 
   // State untuk melacak voucher yang sedang di-claim atau yang sudah berhasil di-claim.
   // Map<voucherUuid, RxBool(isLoading)>
@@ -200,7 +202,6 @@ class HomeController extends GetxController {
   Future<void> fetchInternationalTrips() async {
     isInternationalLoading.value = true;
     try {
-      // 💥 Gunakan tipe model baru
       final trips = await _repository.fetchInternationalTrips();
       internationalTrips.assignAll(trips);
     } catch (e) {
@@ -210,12 +211,25 @@ class HomeController extends GetxController {
     }
   }
 
+  Future<void> fetchLocalTrips() async {
+    isLocalLoading.value = true;
+    try {
+      final trips = await _repository.fetchLocalTrips();
+      localTrips.assignAll(trips);
+    } catch (e) {
+      Get.log("Error loading international trips: $e");
+    } finally {
+      isLocalLoading.value = false;
+    }
+  }
+
   @override
   void onInit() {
     setupFCM();
     fetchUserDataAndTrips();
     getCurrentLocationName();
     fetchInternationalTrips();
+    fetchLocalTrips();
     fetchVouchers();
     fetchWishlist();
     fetchClaimedVouchers(); // <-- Panggilan baru

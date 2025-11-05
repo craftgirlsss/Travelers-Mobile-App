@@ -202,6 +202,25 @@ class TripRepository extends GetConnect {
     }
   }
 
+  Future<List<TripModel>> searchTripsByName(String name) async {
+    print("FUNGSI DIJALANKAN");
+    try {
+      const path = '/trips/search-by-name';
+      final fullPath = "$path?query=$name";
+      Get.log("Mencoba memanggil API: $fullPath"); // Tambahkan log URL lengkap
+      final response = await _apiService.get(fullPath);
+      Get.log("Response Body dari $fullPath: ${response.body}"); // Log response body dengan jelas
+      if (response.statusCode == 200) {
+        return _parseTripResponse(response.body);
+      }
+      Get.log("Gagal memuat trip destinasi: ${response.statusCode}");
+      return [];
+    } catch (e) {
+      Get.log('Error saat searchTripsByDestination: $e');
+      return [];
+    }
+  }
+
   // --- 7. Ambil Daftar Wishlist ---
   // Mengembalikan List<WishlistTripModel>
   Future<List<WishlistTripModel>> fetchWishlist() async {
@@ -443,6 +462,25 @@ class TripRepository extends GetConnect {
 
     } catch (e) {
       Get.log('Error saat fetchInternationalTrips: $e');
+      return [];
+    }
+  }
+
+
+  // 💥 FUNGSI BARU: Mendapatkan Daftar Trip Internasional
+  Future<List<InternationalTripModel>> fetchLocalTrips() async {
+    try {
+      final response = await _apiService.get('/trips/local');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['status'] == 'success' && data['data'] is List) {
+          return (data['data'] as List).map((item) => InternationalTripModel.fromJson(item)).toList();
+        }
+      }
+      Get.log("Gagal memuat trip Local: ${response.statusCode}");
+      return [];
+    } catch (e) {
+      Get.log('Error saat fetchLocalTrips: $e');
       return [];
     }
   }

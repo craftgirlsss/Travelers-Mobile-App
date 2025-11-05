@@ -9,7 +9,7 @@ class HomeCustomAppBar extends GetView<HomeController> implements PreferredSizeW
 
   // Tentukan tinggi total AppBar kustom Anda
   @override
-  Size get preferredSize => const Size.fromHeight(160.0);
+  Size get preferredSize => const Size.fromHeight(130.0);
 
   @override
   Widget build(BuildContext context) {
