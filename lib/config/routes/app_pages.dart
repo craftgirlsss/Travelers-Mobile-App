@@ -15,6 +15,8 @@ import '../../modules/auth/views/reset_password_screen.dart';
 import '../../modules/booking/bindings/booking_binding.dart';
 import '../../modules/home/bindings/home_binding.dart';
 import '../../modules/home/views/home_screen.dart';
+import '../../modules/payment/bindings/payment_binding.dart';
+import '../../modules/payment/views/payment_screen.dart';
 import '../../modules/settings/controllers/about_controller.dart';
 import '../../modules/settings/views/about_screen.dart';
 import '../../modules/trip/bindings/trip_binding.dart';
@@ -105,6 +107,13 @@ class AppPages {
       binding: BindingsBuilder(() {
         Get.lazyPut<AboutController>(() => AboutController());
       }),
+    ),
+
+    GetPage(
+      name: Routes.PAYMENT_DETAIL, // Harus sama dengan Get.toNamed()
+      page: () => PaymentScreen(), // Ganti dengan View yang sebenarnya
+      binding: PaymentDetailBinding(), // Ganti dengan Binding yang sebenarnya
+      transition: Transition.cupertino, // Contoh transisi
     ),
   ];
 }

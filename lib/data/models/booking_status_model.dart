@@ -1,11 +1,9 @@
 // lib/data/models/booking_status_model.dart
 
 class BookingStatusModel {
-  // Status apakah trip ini sudah pernah dibooking oleh user yang sedang login
   final bool booked;
   final String? bookingUuid; // UUID booking jika sudah dibooking
   final String? bookedDate;
-  // Status apakah booking tersebut sudah dibayar
   final bool paid;
   final String? paidAt;
   final String? status; // Contoh: 'pending', 'paid', 'cancelled'

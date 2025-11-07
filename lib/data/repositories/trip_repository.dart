@@ -7,6 +7,8 @@ import '../models/booking_model.dart';
 import '../models/booking_response.dart';
 import '../models/claimed_voucher_model.dart';
 import '../models/international_trip_model.dart';
+import '../models/payment_detail_model.dart';
+import '../models/payment_method_model.dart';
 import '../models/profile_model.dart';
 import '../models/trip_detail_model.dart';
 import '../models/trip_model.dart';
@@ -523,4 +525,82 @@ class TripRepository extends GetConnect {
       return BookingResponse(success: false, message: 'Koneksi gagal: $e');
     }
   }
+
+  Future<List<PaymentMethodModel>> getPaymentMethods(String tripUuid) async {
+    try {
+      final path = '/trip/$tripUuid/payment-methods';
+      final response = await _apiService.get(path);
+      if (response.statusCode == 200 && response.body.isNotEmpty) {
+        final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+        if (jsonResponse['data'] is List) {
+          return (jsonResponse['data'] as List)
+              .map((item) => PaymentMethodModel.fromJson(item as Map<String, dynamic>))
+              .toList();
+        }
+      }
+      Get.log("Gagal memuat metode pembayaran: ${response.statusCode}");
+      return [];
+    } catch (e) {
+      Get.log('Error saat getPaymentMethods: $e');
+      return [];
+    }
+  }
+
+  Future<PaymentDetailModel?> getPaymentDetails(String bookingUuid) async {
+    try {
+      final path = '/bookings/$bookingUuid/payment-details';
+      final response = await _apiService.get(path);
+      if (response.statusCode == 200 && response.body.isNotEmpty) {
+        final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+        if (jsonResponse['data'] != null) {
+          return PaymentDetailModel.fromJson(jsonResponse['data'] as Map<String, dynamic>);
+        }
+      }
+      Get.log("Gagal memuat detail tagihan: ${response.statusCode}");
+      return null;
+    } catch (e) {
+      Get.log('Error saat getPaymentDetails: $e');
+      return null;
+    }
+  }
+
+    // --- 3. Submit Payment Proof (Revisi) ---
+    Future<bool> submitPaymentProof({
+      required String bookingUuid,
+      required int paymentMethodId,
+      required String amountPaid, // Menerima jumlah yang dibayar
+      required String? notes,
+      required String imagePath,
+    }) async {
+      try {
+        final path = '/bookings/$bookingUuid/confirm-payment';
+        final formData = FormData({
+          'amount_paid': amountPaid,
+          'confirmation_note': notes ?? '',
+          'payment_method_id': paymentMethodId.toString(),
+          'proof_image': MultipartFile(
+            File(imagePath),
+            filename: imagePath.split('/').last,
+          ),
+        });
+
+        final response = await _apiService.post(path, body: formData);
+
+        Get.log("Response Submit Payment: Status: ${response.statusCode}, Body: ${response.body}");
+
+        if (response.statusCode == 200) {
+          final jsonResponse = jsonDecode(response.body);
+          if (jsonResponse['success'] == true) {
+            return true;
+          }
+        }
+
+        Get.log("Gagal konfirmasi pembayaran: ${response.statusCode}. Pesan: ${jsonDecode(response.body)['message']}");
+        return false;
+
+      } catch (e) {
+        Get.log('Error saat submitPaymentProof: $e');
+        return false;
+      }
+    }
 }
